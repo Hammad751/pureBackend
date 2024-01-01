@@ -1,1 +1,3 @@
-console.log("index file is generated");
+import dotenv from 'dotenv'
+
+dotenv.config();
