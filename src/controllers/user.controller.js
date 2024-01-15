@@ -5,28 +5,33 @@ import { uploadFile } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponce.js";
 const registerUser = asyncHandler (
     async (req, res) =>{
-        console.log(req.body);
+        console.log("body>>...", req.body);
         const {username, fullname, email, password} = req.body;
-    
-        res.status(200).json({message: "user created"})
 
         if(
-            [username, fullname, email, password].
-            some((field) => field?.trim() === "")
+            [username, fullname, email, password].some((field) => field?.trim() === "")
         ){
-            throw new ApiError(400, "All feilds are required.");
+            throw new ApiError(400, "All fields are required.");
         }
-        const isExists = User.findOne({
+        const isExists = await User.findOne({
             $or: [{ username }, { email }]
         })
 
         if(isExists){
             throw new ApiError(409, "user already exists");
         }
-
-        // console.log(req.files);
+        
         const avtLocalPath = req.files?.avatar[0]?.path;
-        const coverImgPath = req.files?.coverImage[0]?.path
+        // const coverImgPath = req.files?.coverImage[0]?.path;
+        
+        console.log("request files: ",req.files);
+
+        let coverImgPath;
+        if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+            coverImgPath = req.files.coverImage[0].path;
+        }
+        console.log("coverImgPath: ", coverImgPath);
+        console.log("avtLocalPath", avtLocalPath);
 
         if(!avtLocalPath){
             throw new ApiError(400, "image file is required");
@@ -37,12 +42,12 @@ const registerUser = asyncHandler (
         if(!avatar) throw new ApiError(400, "avatar is required");
 
         const user = await User.create({
+            username: username.toLowerCase(),
             fullname,
-            avatar: avatar.url,
-            coverIamge: coverImage?.url || "",
             email,
             password,
-            username: username.toLowerCase(),
+            avatar: avatar.url,
+            coverImage: coverImage?.url || "",
         });
 
         const usercreated = await User.findById(user._id).select(
