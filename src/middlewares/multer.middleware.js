@@ -5,7 +5,6 @@ const storage = multer.diskStorage({
     cb(null, "./public/temp"); // path where to save all files
   },
   filename: function (req, file, cb) {
-    console.log("file.originalname: ", file.originalname);
     cb(null, file.originalname);
   }
 
