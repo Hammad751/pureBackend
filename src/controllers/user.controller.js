@@ -21,7 +21,6 @@ const generate_Ref_Acc_Token = async (userId) => {
 }
 const registerUser = asyncHandler (
     async (req, res) =>{
-        console.log("body>>...", req.body);
         const {username, fullname, email, password} = req.body;
 
         if(
@@ -32,15 +31,11 @@ const registerUser = asyncHandler (
         const isExists = await User.findOne({
             $or: [{ username }, { email }]
         })
-
         if(isExists){
             throw new ApiError(409, "user already exists");
         }
         
         const avtLocalPath = req.files?.avatar[0]?.path;
-        // const coverImgPath = req.files?.coverImage[0]?.path;
-        
-        console.log("request files: ",req.files);
 
         let coverImgPath;
         if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
@@ -162,15 +157,37 @@ const refreshAccessToken = asyncHandler(
                 process.env.REFERESH_TOKEN_SECRET
             )
 
+            console.log("decodedToken: ", decodedToken._id);
             const user = await User.findById(decodedToken?._id);
             if(!user){
                 throw new ApiError(401, "user not found");
             }
 
+            if(incomingRefreshToken !== user?.refreshToken){
+                throw new ApiError(401, "Token is expired");
+            }
+
+            const options ={
+                httpOnly: true,
+                secure: true
+            }
+            const {access_token, refresh_token} = await generate_Ref_Acc_Token(user._id);
+
+            return res
+            .status(200)
+            .cookie("access_token",access_token, options)
+            .cookie("refresh_token", refresh_token, options)
+            .json(
+                new ApiResponse(
+                200, 
+                {access_token, refresh_token},
+                "token generated successfully")
+            );
+
         } catch (error) {
-            throw new ApiError(500, "something went wrong");
+            throw new ApiError(401, error?.message || "something went wrong");
         }
     }
 )
 
-export {registerUser, login, logout};
+export {registerUser, login, logout, refreshAccessToken};
