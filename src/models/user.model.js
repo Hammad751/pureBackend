@@ -56,9 +56,9 @@ userSchema.methods.isValid = async function(password){
     const isValidpass = await bcryptjs.compareSync(password, this.password);
     return isValidpass;
 }
-userSchema.methods.generateAccessToken = async function()
+userSchema.methods.generateAccessToken = function()
 {
-    return await jwt.sign(
+    return jwt.sign(
     {
         id: this._id,
         emial: this.email
@@ -67,8 +67,8 @@ userSchema.methods.generateAccessToken = async function()
     {expiresIn: process.env.ACCESS_EXPIRY}
     );
 }
-userSchema.methods.generateRefershToken = async function(){
-    return await jwt.sign(
+userSchema.methods.generateRefershToken = function(){
+    return jwt.sign(
         { id: this._id },
         process.env.REFERESH_TOKEN_SECRET,
         {expiresIn: process.env.REFERESH_TOKEN_EXPIRY}
