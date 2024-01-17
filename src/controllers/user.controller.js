@@ -41,8 +41,6 @@ const registerUser = asyncHandler (
         if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
             coverImgPath = req.files.coverImage[0].path;
         }
-        console.log("coverImgPath: ", coverImgPath);
-        console.log("avtLocalPath", avtLocalPath);
 
         if(!avtLocalPath){
             throw new ApiError(400, "image file is required");
@@ -190,4 +188,168 @@ const refreshAccessToken = asyncHandler(
     }
 )
 
-export {registerUser, login, logout, refreshAccessToken};
+const updatePassword = asyncHandler(
+    async (req, res)=>{
+        try {
+            const {oldPassword, newPassword} = req.body;
+    
+            const user = await User.findById(req.user?._id);
+    
+            if(!user){
+                throw new ApiError(401, "user not found");
+            }
+    
+            const currentPassword = await user.isValid(oldPassword);
+    
+            if(!currentPassword){
+                throw new ApiError(400, "invalid password");
+            }
+    
+            user.password = newPassword;
+            await user.save({validateBeforeSave: false});
+    
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200, {}, "password changed")
+            );
+        } catch (error) {
+            throw new ApiError(400, "wrong credentials");
+        }
+    }
+)
+
+const getcurrentUser = asyncHandler(
+    async (req, res) => {
+        try {
+            return res
+            .status(200)
+            .json(200, req.user, "current user fetched");
+        } catch (error) {
+            throw new ApiError(500, "internal server error");
+        }
+    }
+)
+
+const updateAccountDetails = asyncHandler(
+    async (req, res) => {
+        try {
+            const {fullname, email} = req.body;
+
+            if(!fullname || !email){
+                throw new ApiError(400, "both fields are required");
+            }
+
+            const userDetails = await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set:{
+                        fullname,
+                        email
+                    }  
+                },
+                {new: true}
+            ).select("-password");
+
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                200, userDetails, "user details updated successfully")
+            );
+
+        } catch (error) {
+            throw new ApiError(400, "data not found");
+        }
+    }
+)
+
+const updateAvatar = asyncHandler(
+    async (req, res) => {
+        try {
+            const userAvatar = req.file?.avatar;
+
+            if(!userAvatar){
+                throw new ApiError(401, "file not found");
+            }
+
+            const avatar = await uploadFile(userAvatar);
+
+            if(!avatar.url){
+                throw new ApiError(400, "error while uploading avatar");
+            }
+
+            const avatarFile = await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set:{
+                        avatar: avatar.url,
+                    }
+                },
+                {new: true} 
+            ).select("-password");
+
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200, avatarFile, "avatar image updated")
+            );
+
+            // user.avatar = avatar.url;
+            // await user.save({validateBeforeSave: false})
+        } catch (error) {
+            throw new ApiError(400, "user not found");
+        }
+    }
+)
+
+const updateCoverImage = asyncHandler(
+    async (req, res) => {
+        try {
+            const coverImage = req.file?.coverImage;
+
+            if(!coverImage){
+                throw new ApiError(401, "file not found");
+            }
+
+            const userCoverImage = await uploadFile(coverImage);
+
+            if(!userCoverImage.url){
+                throw new ApiError(400, "error while uploading CoverImage");
+            }
+
+            const coverFile = await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set:{
+                        coverImage: userCoverImage.url,
+                    }
+                },
+                {new: true} 
+            ).select("-password");
+
+            return res
+            .status(200)
+            .json(
+                new ApiResponse(200, coverFile, "cover image updated")
+            );
+
+            // user.avatar = avatar.url;
+            // await user.save({validateBeforeSave: false})
+        } catch (error) {
+            throw new ApiError(400, "user not found");
+        }
+    }
+)
+
+export {
+    login, 
+    logout,
+    updateAvatar,
+    registerUser, 
+    getcurrentUser,
+    updatePassword,
+    updateCoverImage,
+    refreshAccessToken,
+    updateAccountDetails,
+};
