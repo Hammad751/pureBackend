@@ -2,7 +2,7 @@ import {asyncHandler} from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadFile } from "../utils/cloudinary.js";
-import { ApiResponse } from "../utils/ApiResponce.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
 const generate_Ref_Acc_Token = async (userId) => {
@@ -19,6 +19,7 @@ const generate_Ref_Acc_Token = async (userId) => {
         throw new ApiError(500, "something went wrong while generating tokens");
     }
 }
+
 const registerUser = asyncHandler (
     async (req, res) =>{
         const {username, fullname, email, password} = req.body;
@@ -211,7 +212,7 @@ const updatePassword = asyncHandler(
             return res
             .status(200)
             .json(
-                new ApiResponse(200, {}, "password changed")
+                new ApiResponse(200, {}, "password updated")
             );
         } catch (error) {
             throw new ApiError(400, "wrong credentials");
@@ -342,6 +343,83 @@ const updateCoverImage = asyncHandler(
     }
 )
 
+const getUserChannelProfile = asyncHandler(
+    async (req, res) => {
+        const {username} = req.params;
+
+        if(!username?.trim()){
+            throw new ApiError(400, 'username not found');
+        }
+
+        const channel = await User.aggregate([
+            {
+                $match:{ // it matches the data in DB, it works like a where clause in sql
+                    username: username?.toLowerCase()
+                }
+            },
+            {
+                $lookup:{
+                    from: "subscriptions", // from which table/document we are join. This data is getting from db,
+                                           // so make sure naming convention is based on DB's naming convention.
+                    localField:"_id", // by which name we getting the data in current document
+                    foreignField:"channel", // name of field from other document
+                    as: "subscribers" // by using this name we get the data in current document 
+                }
+            },
+            {
+                $lookup:{
+                    from: "subscriptions",
+                    localField:"_id",
+                    foreignField:"subscriber",
+                    as: "subscribedTo"
+                }
+            },
+            {
+                $addFields:{ // this field adds new fields in thed document
+                    subscribersCount:{ 
+                        $size: "$subscribers" // size is used to count the totals in "subscribers" field.
+                                              // as this is the field, we have to use "$" sign  
+                    },
+                    subscribedToCount:{
+                        $size: "$subscribedTo" // this is the same as subscribers field
+                    },
+                    isSubscribed:{
+                        $condition:{
+                            if: {$in: [req.user?._id, "subscribers.subscriber"]},
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project:{ // this is used to project the data on frontend.
+                           // we specify the fields which we want to display on frontend
+                    fullname: 1,
+                    username: 1,
+                    subscribersCount: 1,
+                    subscribedToCount: 1,
+                    isSubscribed:1,
+                    avatar: 1,
+                    coverImage:1
+                }
+            }
+        ]);
+
+        console.log("channel: ", channel);
+
+        if(!channel?.length){
+            throw new ApiError(400, "channel does not exist");
+        }
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, channel[0], "user channel fetched")
+        );
+    }
+)
+
 export {
     login, 
     logout,
@@ -352,4 +430,5 @@ export {
     updateCoverImage,
     refreshAccessToken,
     updateAccountDetails,
-};
+    getUserChannelProfile,
+};  
