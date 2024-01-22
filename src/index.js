@@ -19,7 +19,7 @@ connectDB()
     })
 })
 .catch((err)=>{
-    console.log(`DB ERROR: ${err}`);
+    console.log(`DB CONNECTION ERROR: ${err}`);
 })
 
 // const app = express();

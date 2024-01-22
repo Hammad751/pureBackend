@@ -124,8 +124,8 @@ const logout = asyncHandler(
         await User.findByIdAndUpdate(
             req.user._id,
             {
-                $set:{
-                    refreshToken: undefined
+                $unset:{
+                    refreshToken: 1
                 },
             },
             {new: true}
@@ -157,8 +157,7 @@ const refreshAccessToken = asyncHandler(
                 process.env.REFERESH_TOKEN_SECRET
             )
 
-            console.log("decodedToken: ", decodedToken._id);
-            const user = await User.findById(decodedToken?._id);
+            const user = await User.findById(decodedToken?.id);
             if(!user){
                 throw new ApiError(401, "user not found");
             }
@@ -171,6 +170,7 @@ const refreshAccessToken = asyncHandler(
                 httpOnly: true,
                 secure: true
             }
+
             const {access_token, refresh_token} = await generate_Ref_Acc_Token(user._id);
 
             return res
@@ -194,9 +194,9 @@ const updatePassword = asyncHandler(
     async (req, res)=>{
         try {
             const {oldPassword, newPassword} = req.body;
-    
+
             const user = await User.findById(req.user?._id);
-    
+
             if(!user){
                 throw new ApiError(401, "user not found");
             }
@@ -226,7 +226,9 @@ const getcurrentUser = asyncHandler(
         try {
             return res
             .status(200)
-            .json(200, req.user, "current user fetched");
+            .json(
+                new ApiResponse( 200, req.user, "current user fetched")
+            );
         } catch (error) {
             throw new ApiError(500, "internal server error");
         }
@@ -247,7 +249,7 @@ const updateAccountDetails = asyncHandler(
                 {
                     $set:{
                         fullname,
-                        email
+                        email: email
                     }  
                 },
                 {new: true}
@@ -456,7 +458,7 @@ const getWatchHistory = asyncHandler(
                         {
                             $addFields:{
                                 owner: {
-                                    $first: "owner"
+                                    $first: "$owner"
                                 }
                             }
                         },
@@ -476,6 +478,7 @@ const getWatchHistory = asyncHandler(
         )
     }
 )
+
 export {
     login, 
     logout,
