@@ -15,7 +15,21 @@ app.use(cookieParser());
 
 // import Routes
 import userRouter from './routes/user.routes.js';
+import healthRouter from "./routes/healthChecker.routes.js";
+import dashboard from "./routes/dashboard.routes.js";
+import likesRouter from "./routes/likes.routes.js";
+import tweetRouter from "./routes/tweets.routes.js";
+import commentsRouter from "./routes/comments.routes.js";
+import videoRouter from "./routes/videos.routes.js";
+import playListRouter from "./routes/playlist.routes.js";
 
 app.use('/server/users', userRouter);
+app.use("/server/healthcheck", healthRouter);
+app.use("/server/dashboard", dashboard);
+app.use("/server/likes", likesRouter);
+app.use("/server/Tweets", tweetRouter);
+app.use("/server/comments", commentsRouter);
+app.use("/server/videos", videoRouter);
+app.use("/server/playlist", playListRouter);
 
 export { app };

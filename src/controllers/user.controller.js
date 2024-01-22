@@ -380,7 +380,7 @@ const getUserChannelProfile = asyncHandler(
             {
                 $addFields:{ // this field adds new fields in thed document
                     subscribersCount:{ 
-                        $size: "$subscribers" // size is used to count the totals in "subscribers" field.
+                        $size: "$subscribers" // size is used to count the total subscribers in "subscribers" field.
                                               // as this is the field, we have to use "$" sign  
                     },
                     subscribedToCount:{

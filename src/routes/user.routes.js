@@ -13,7 +13,6 @@ import {
     getWatchHistory
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import healthChecker from "../controllers/healthchecker.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -44,8 +43,5 @@ router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updat
 router.route("/current-user").get(verifyJWT, getcurrentUser);
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/history").get(verifyJWT, getWatchHistory);
-
-// healthChecker Assignment
-router.route("/healthChecker").get(verifyJWT, healthChecker);
 
 export default router;
